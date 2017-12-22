@@ -463,9 +463,13 @@ for (( i = 0; i < ${N4_ATROPOS_NUMBER_OF_ITERATIONS}; i++ ))
             cp ${ANATOMICAL_IMAGES[$j]} ${SEGMENTATION_N4_IMAGES[$j]}
           fi
         exe_n4_correction="${N4} -d ${DIMENSION} -i ${SEGMENTATION_N4_IMAGES[$j]} -x ${ATROPOS_SEGMENTATION_MASK} -s ${N4_SHRINK_FACTOR} -c ${N4_CONVERGENCE} -b ${N4_BSPLINE_PARAMS} -o ${SEGMENTATION_N4_IMAGES[$j]} --verbose 1"
+	logCmd ${ANTSPATH}/CopyImageHeaderInformation ${ANATOMICAL_IMAGES[0]} ${SEGMENTATION_N4_IMAGES[$j]} ${SEGMENTATION_N4_IMAGES[$j]} 1 1 1
+	logCmd ${ANTSPATH}/CopyImageHeaderInformation ${ANATOMICAL_IMAGES[0]} ${ATROPOS_SEGMENTATION_MASK} ${ATROPOS_SEGMENTATION_MASK} 1 1 1
+	
         if [[ -f ${SEGMENTATION_WEIGHT_MASK} ]];
           then
             exe_n4_correction="${exe_n4_correction} -w ${SEGMENTATION_WEIGHT_MASK}"
+	    logCmd ${ANTSPATH}/CopyImageHeaderInformation ${ANATOMICAL_IMAGES[0]} ${SEGMENTATION_WEIGHT_MASK} ${SEGMENTATION_WEIGHT_MASK} 1 1 1
           fi
         logCmd $exe_n4_correction
         logCmd ${ANTSPATH}/ImageMath ${DIMENSION} ${SEGMENTATION_N4_IMAGES[$j]} Normalize ${SEGMENTATION_N4_IMAGES[$j]}
@@ -475,6 +479,7 @@ for (( i = 0; i < ${N4_ATROPOS_NUMBER_OF_ITERATIONS}; i++ ))
     ATROPOS_ANATOMICAL_IMAGES_COMMAND_LINE=''
     for (( j = 0; j < ${#ANATOMICAL_IMAGES[@]}; j++ ))
       do
+        logCmd ${ANTSPATH}/CopyImageHeaderInformation ${ANATOMICAL_IMAGES[0]} ${SEGMENTATION_N4_IMAGES[$j]} ${SEGMENTATION_N4_IMAGES[$j]} 1 1 1
         ATROPOS_ANATOMICAL_IMAGES_COMMAND_LINE="${ATROPOS_ANATOMICAL_IMAGES_COMMAND_LINE} -a ${SEGMENTATION_N4_IMAGES[$j]}"
       done
 
@@ -495,6 +500,12 @@ for (( i = 0; i < ${N4_ATROPOS_NUMBER_OF_ITERATIONS}; i++ ))
         ATROPOS_LABEL_PROPAGATION_COMMAND_LINE="${ATROPOS_LABEL_PROPAGATION_COMMAND_LINE} -l ${ATROPOS_SEGMENTATION_LABEL_PROPAGATION[$j]}";
       done
 
+# Precision errors in .nii (which stores things as float) headers can cause problems, so attempt to make everything consistent.
+# Won't be perfectly consistent because we don't change ${ANATOMICAL_IMAGES[0]} and CopyImageHeaderInformation does not make
+# a perfect copy. But hopefully close enough
+
+    logCmd ${ANTSPATH}/CopyImageHeaderInformation ${ANATOMICAL_IMAGES[0]} ${ATROPOS_SEGMENTATION_MASK} ${ATROPOS_SEGMENTATION_MASK} 1 1 1
+
     exe_segmentation="${ATROPOS} -d ${DIMENSION} -x ${ATROPOS_SEGMENTATION_MASK} -c ${ATROPOS_SEGMENTATION_CONVERGENCE} ${ATROPOS_ANATOMICAL_IMAGES_COMMAND_LINE} ${ATROPOS_LABEL_PROPAGATION_COMMAND_LINE} --verbose 1"
     exe_segmentation="${exe_segmentation} -i ${INITIALIZATION} -k ${ATROPOS_SEGMENTATION_LIKELIHOOD} -m ${ATROPOS_SEGMENTATION_MRF} -o [${ATROPOS_SEGMENTATION},${ATROPOS_SEGMENTATION_POSTERIORS}] -r ${USE_RANDOM_SEEDING}"
 
@@ -513,6 +524,7 @@ for (( i = 0; i < ${N4_ATROPOS_NUMBER_OF_ITERATIONS}; i++ ))
 
         for (( j = 0; j < ${#ANATOMICAL_IMAGES[@]}; j++ ))
           do
+	    logCmd ${ANTSPATH}/CopyImageHeaderInformation ${ANATOMICAL_IMAGES[0]} ${SEGMENTATION_N4_IMAGES[$j]} ${SEGMENTATION_N4_IMAGES[$j]} 1 1 1
             ATROPOS_ANATOMICAL_IMAGES_COMMAND_LINE="${ATROPOS_ANATOMICAL_IMAGES_COMMAND_LINE} -a ${SEGMENTATION_N4_IMAGES[$j]}";
           done
       fi
